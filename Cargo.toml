@@ -1,0 +1,51 @@
+[package]
+name = "mirl_collections"
+version = "0.0.0-alpha"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+mirl_extensions_core = { version = "0.0.0-alpha" }
+mirl_core = { version = "0.0.0-alpha" }
+
+# Codec
+serde = { version = ">=1.0", optional = true, features = ["derive"] }
+bitcode = { version = "0.6.9", optional = true, default-features = false, features = [
+    "derive",
+] }
+wincode = { version = "0.4.5", optional = true, features = ["derive"] }
+# # Enum functionality
+# strum = { version = ">=0.28", optional = true, default-features = false, features = [
+#     "derive",
+# ] }
+# enum_ext = { version = "0.5.2", optional = true, default-features = false, features = [
+# ] }
+
+[features]
+
+# Compatibility with ffi
+c_compatible = []
+all = [
+    "serde",
+    "bitcode",
+    "wincode", #, "strum", "enum_ext"
+]
+
+serde = ["dep:serde"]
+bitcode = ["dep:bitcode"]
+wincode = ["dep:wincode"]
+
+
+# # Enum extensions
+# strum = ["dep:strum"]
+# enum_ext = ["dep:enum_ext"]
+_checking = ["all"]
+
+[lints]
+workspace = true
+
+[build-dependencies]
+mirl_build_tools = { workspace = true }
