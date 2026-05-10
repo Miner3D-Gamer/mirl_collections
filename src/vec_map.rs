@@ -1,12 +1,7 @@
 use mirl_core::misc::vec_try_remove;
 use mirl_extensions_core::IndexedMap;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
-#[cfg_attr(
-    feature = "wincode",
-    derive(wincode::SchemaRead, wincode::SchemaWrite)
-)]
+#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// A "`HashMap`" like struct that keeps the insert order and duplicate items but also doesn't require the items to implement `Hash` or `Ord`
 pub struct VecMap<K, V, const KEEP_UNIQUE: bool> {
@@ -129,7 +124,7 @@ impl<K: core::cmp::PartialEq, V> IntoIterator for VecMap<K, V, false> {
         self.map.into_iter()
     }
 }
-impl<K: core::cmp::PartialEq, V> mirl_extensions_core::Map<K, V>
+impl<K: core::cmp::PartialEq, V> mirl_extensions_core::MapLike<K, V>
     for VecMap<K, V, false>
 {
     fn insert(&mut self, key: K, val: V) -> Option<V> {

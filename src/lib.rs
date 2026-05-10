@@ -8,3 +8,8 @@
 pub mod vec_map;
 
 pub use vec_map::VecMap;
+
+/// A vec that doesn't shrink when objects are removed, making it O(1) for insertion, getting, and removing values.
+pub mod sparse_vec;
+
+pub use sparse_vec::SparseVec;
