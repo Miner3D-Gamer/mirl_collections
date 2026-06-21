@@ -1,8 +1,7 @@
 [package]
 name = "mirl_collections"
-version = "0.0.1-alpha"
+version = "0.0.0-alpha"
 edition.workspace = true
-readme.workspace = true
 repository.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -10,6 +9,8 @@ authors.workspace = true
 [dependencies]
 mirl_extensions_core = { version = "0.0.0-alpha" }
 mirl_core = { version = "0.0.0-alpha" }
+
+inventory = { version = "0.3.24" }
 
 mirl_derive = { version = "0.0.0-alpha", optional = true }
 # Codec
@@ -20,28 +21,26 @@ serde = { version = ">=1.0", optional = true, default-features = false, features
 bitcode = { version = "0.6.9", optional = true, default-features = false, features = [
     "derive",
 ] }
-wincode = { version = "0.4.5", optional = true, default-features = false, features = [
-    "derive",
-] }
+wincode = { version = "0.5.3", optional = true, features = ["derive"] }
 zerocopy = { version = "0.8.48", optional = true, default-features = false, features = [
     "float-nightly",
     "derive",
 ] }
 
-# # Enum functionality
-# strum = { version = ">=0.28", optional = true, default-features = false, features = [
-#     "derive",
-# ] }
-# enum_ext = { version = "0.5.2", optional = true, default-features = false }
+# Enum functionality
+strum = { version = ">=0.28", optional = true, default-features = false, features = [
+    "derive",
+] }
+enum_ext = { version = "0.6.0", optional = true, default-features = false }
 
+fontdue = { version = ">=0.9.3", optional = true, default-features = false }
+
+# graphics & render
+image = { version = ">=0.25.9", optional = true, default-features = false }
 
 
 [features]
-all = [
-    "all_codecs",
-    "bitcode",
-    # "all_enum_extensions",
-]
+all = ["all_codecs", "bitcode", "font_support", "all_enum_extensions"]
 
 # Does nothing by itself. Needs another codec or enum flag to do something
 mirl_derive = ["dep:mirl_derive"]
@@ -50,7 +49,7 @@ c_compatible = ["mirl_derive"]
 # Enables all codecs
 all_codecs = ["serde", "bitcode", "wincode", "compactly", "zerocopy"]
 # # All enum extensions
-# all_enum_extensions = ["strum", "enum_ext"]
+all_enum_extensions = ["strum", "enum_ext"]
 
 # Codec stuff
 serde = ["dep:serde", "mirl_derive", "mirl_core/serde"]
@@ -59,9 +58,12 @@ wincode = ["dep:wincode", "mirl_derive", "mirl_core/wincode"]
 compactly = ["dep:compactly", "mirl_derive", "mirl_core/compactly"]
 zerocopy = ["dep:zerocopy", "mirl_derive", "mirl_core/zerocopy"]
 
-# # Enum extensions
-# strum = ["dep:strum", "mirl_derive"]
-# enum_ext = ["dep:enum_ext", "mirl_derive"]
+# Enum extensions
+strum = ["dep:strum", "mirl_derive", "mirl_core/strum"]
+enum_ext = ["dep:enum_ext", "mirl_derive", "mirl_core/enum_ext"]
+
+font_support = ["dep:fontdue"]
+image_support = ["dep:image"]
 
 _checking = ["all"]
 

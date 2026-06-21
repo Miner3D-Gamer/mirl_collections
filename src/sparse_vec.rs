@@ -1,5 +1,6 @@
 use mirl_extensions_core::ListLike;
 
+#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]
 // #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// # Disclaimer:
 /// **use [`get_latest_idx`](Self::get_latest_idx) after using [`push`](super::ListLikeHelper::push) or [`push_mut`](ListLike::push_mut) to get the idx at which the new item lives**
@@ -36,6 +37,36 @@ impl<T> Default for SparseVec<T> {
     }
 }
 impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
+    type Iterator<'a>
+        = UnorderedSparseVecIter<'a, T>
+    where
+        T: 'a;
+
+    type IteratorMut<'a>
+        = UnorderedSparseVecIterMut<'a, T>
+    where
+        T: 'a;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        <&Self as IntoIterator>::into_iter(self)
+    }
+    fn iter_mut(&mut self) -> Self::IteratorMut<'_> {
+        <&mut Self as IntoIterator>::into_iter(self)
+    }
+    unsafe fn get_unchecked(&self, index: usize) -> &T {
+        unsafe {
+            self.values.get_unchecked(
+                *self.value_indexes.as_slice().get_unchecked(index),
+            )
+        }
+    }
+    unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
+        unsafe {
+            self.values.get_unchecked_mut(
+                *self.value_indexes.as_slice().get_unchecked(index),
+            )
+        }
+    }
     fn push_mut(&mut self, value: T) -> &mut T {
         if self.values.len() + 1 > self.value_indexes.len() {
             self.value_indexes.push(self.values.len());
@@ -43,10 +74,14 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
         }
         self.values.push_mut(value)
     }
-    fn swap_values(&mut self, a: usize, b: usize) {
+    fn swap_values(&mut self, a: usize, b: usize) -> bool {
         let first = self.value_indexes[a];
         let second = self.value_indexes[b];
+        if first > self.len() || second > self.len() {
+            return false;
+        }
         self.swap_internal(first, second);
+        true
     }
     fn try_remove(&mut self, index: usize) -> Option<T> {
         let a = self.value_indexes[index];
@@ -69,8 +104,9 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
     /// This function shall not be called.
     ///
     /// The point of insertion is pushing all further idx to the right which contradicts the point of having stable idx in [`SparseVec`]
-    fn insert_mut(&mut self, _index: usize, _value: T) -> &mut T {
-        unreachable!()
+    // TODO: Implement this
+    fn try_insert_mut(&mut self, _index: usize, _value: T) -> Option<&mut T> {
+        unimplemented!("`try_insert_mut` cannot be used on a sparse vec")
     }
     fn try_replace(&mut self, index: usize, value: T) -> Option<T> {
         self.values.try_replace(*self.value_indexes.get(index)?, value)
@@ -124,13 +160,16 @@ impl<T> std::ops::IndexMut<usize> for SparseVec<T> {
     }
 }
 #[derive(Debug, Clone, Default)]
-/// An iter over [`SparseVec`]
+/// An iter over [`SparseVec`] that doesn't retain insertion order
 #[cfg_attr(feature = "c_compatible", repr(C))]
-pub struct SparseVecIter<'a, T> {
-    inner: std::slice::Iter<'a, T>,
+pub struct UnorderedSparseVecIter<'a, T> {
+    /// The inner iterator
+    ///
+    /// Not intended to be accessed
+    pub inner: std::slice::Iter<'a, T>,
 }
 
-impl<'a, T> Iterator for SparseVecIter<'a, T> {
+impl<'a, T> Iterator for UnorderedSparseVecIter<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -142,13 +181,16 @@ impl<'a, T> Iterator for SparseVecIter<'a, T> {
     }
 }
 #[derive(Debug, Default)]
-/// A mutable iter over [`SparseVec`]
+/// A mutable iter over [`SparseVec`] that doesn't retain insertion order
 #[cfg_attr(feature = "c_compatible", repr(C))]
-pub struct SparseVecIterMut<'a, T> {
-    inner: std::slice::IterMut<'a, T>,
+pub struct UnorderedSparseVecIterMut<'a, T> {
+    /// The inner iterator
+    ///
+    /// Not intended to be accessed
+    pub inner: std::slice::IterMut<'a, T>,
 }
 
-impl<'a, T> Iterator for SparseVecIterMut<'a, T> {
+impl<'a, T> Iterator for UnorderedSparseVecIterMut<'a, T> {
     type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -163,16 +205,16 @@ impl<'a, T> Iterator for SparseVecIterMut<'a, T> {
 impl<T> SparseVec<T> {
     #[must_use]
     /// Iter over the internal values, the iter idx is not the same as the idx used to derive a value
-    pub fn iter(&self) -> SparseVecIter<'_, T> {
-        SparseVecIter {
+    pub fn iter(&self) -> UnorderedSparseVecIter<'_, T> {
+        UnorderedSparseVecIter {
             inner: self.values.iter(),
         }
     }
 
     #[must_use]
     /// Iter over the internal values mutably, the iter idx is not the same as the idx used to derive a value
-    pub fn iter_mut(&mut self) -> SparseVecIterMut<'_, T> {
-        SparseVecIterMut {
+    pub fn iter_mut(&mut self) -> UnorderedSparseVecIterMut<'_, T> {
+        UnorderedSparseVecIterMut {
             inner: self.values.iter_mut(),
         }
     }
@@ -180,7 +222,7 @@ impl<T> SparseVec<T> {
 
 impl<'a, T> IntoIterator for &'a SparseVec<T> {
     type Item = &'a T;
-    type IntoIter = SparseVecIter<'a, T>;
+    type IntoIter = UnorderedSparseVecIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -189,7 +231,7 @@ impl<'a, T> IntoIterator for &'a SparseVec<T> {
 
 impl<'a, T> IntoIterator for &'a mut SparseVec<T> {
     type Item = &'a mut T;
-    type IntoIter = SparseVecIterMut<'a, T>;
+    type IntoIter = UnorderedSparseVecIterMut<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()

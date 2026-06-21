@@ -24,6 +24,20 @@ impl<K, V, const KEEP_UNIQUE: bool> const Default
         }
     }
 }
+impl<K, V> From<Vec<(K, V)>> for VecMap<K, V, true> {
+    fn from(value: Vec<(K, V)>) -> Self {
+        Self {
+            map: value,
+        }
+    }
+}
+// impl<K, V> Into<Vec<(K, V)>> for VecMap<K, V, true>
+impl<K, V> From<VecMap<K, V, true>> for Vec<(K, V)> {
+    fn from(val: VecMap<K, V, true>) -> Self {
+        val.map
+    }
+}
+
 // impl<K: core::cmp::PartialEq, V, const KEEP_UNIQUE: bool>
 //     std::iter::IntoIterator for VecMap<K, V, KEEP_UNIQUE>
 // {
