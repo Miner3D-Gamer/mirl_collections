@@ -31,31 +31,23 @@ pub trait ListOfStringsFromBinaryDataPluginTrait {
     ///
     /// # Errors
     /// If the data is not in utf8 format
-    fn to_list_of_strings(
-        &self,
-    ) -> Result<Vec<String>, ListOfStringsDecodeError>;
+    fn to_list_of_strings(&self) -> Result<Vec<String>, ListOfStringsDecodeError>;
 }
 /// The trait, implemented for [`BinaryData`]
 pub trait ListOfStringsToBinaryDataPluginTrait: Sized {
     /// Create a [`BinaryData`] from a string
-    /// 
+    ///
     /// # Errors
     /// [`ListOfStringsEncodeError`]
-    fn from_list_of_strings(
-        string: &[&str],
-    ) -> Result<Self, ListOfStringsEncodeError>;
+    fn from_list_of_strings(string: &[&str]) -> Result<Self, ListOfStringsEncodeError>;
 }
 impl<T> ListOfStringsFromBinaryDataPluginTrait for BinaryData<T> {
-    fn to_list_of_strings(
-        &self,
-    ) -> Result<Vec<String>, ListOfStringsDecodeError> {
+    fn to_list_of_strings(&self) -> Result<Vec<String>, ListOfStringsDecodeError> {
         bytes_to_strings(&self.raw_data)
     }
 }
 impl ListOfStringsToBinaryDataPluginTrait for BinaryData<GenericDataType> {
-    fn from_list_of_strings(
-        string: &[&str],
-    ) -> Result<Self, ListOfStringsEncodeError> {
+    fn from_list_of_strings(string: &[&str]) -> Result<Self, ListOfStringsEncodeError> {
         Ok(Self {
             raw_data: strings_to_bytes(string)?,
             data_type: GenericDataType::ListOfText,
@@ -63,9 +55,7 @@ impl ListOfStringsToBinaryDataPluginTrait for BinaryData<GenericDataType> {
     }
 }
 impl ListOfStringsToBinaryDataPluginTrait for BinaryData<String> {
-    fn from_list_of_strings(
-        string: &[&str],
-    ) -> Result<Self, ListOfStringsEncodeError> {
+    fn from_list_of_strings(string: &[&str]) -> Result<Self, ListOfStringsEncodeError> {
         Ok(Self {
             raw_data: strings_to_bytes(string)?,
             data_type: "list_of_string@utf8".to_string(),
@@ -80,7 +70,7 @@ inventory::submit! {
     }
 }
 
-#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]
+#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all(zerocopy = false))]
 /// Errors that might occur when encoding a list of strings into raw bytes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ListOfStringsEncodeError {
@@ -107,7 +97,7 @@ impl std::error::Error for ListOfStringsEncodeError {}
 
 #[cfg_attr(
     feature = "mirl_derive",
-    mirl_derive::derive_all(serde = false, bitcode = false)
+    mirl_derive::derive_all(serde = false, bitcode = false, zerocopy = false)
 )]
 /// Errors that might occur when decoding a list of strings into raw bytes
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -137,12 +127,10 @@ impl std::error::Error for ListOfStringsDecodeError {
 }
 
 /// Convert a list of strings into a list of bytes.
-/// 
+///
 /// # Errors
 /// [`ListOfStringsEncodeError`]
-pub fn strings_to_bytes(
-    list: &[&str],
-) -> Result<Vec<u8>, ListOfStringsEncodeError> {
+pub fn strings_to_bytes(list: &[&str]) -> Result<Vec<u8>, ListOfStringsEncodeError> {
     let count = u32::try_from(list.len())
         .map_err(|_| ListOfStringsEncodeError::TooManyStrings(list.len()))?;
 
@@ -151,9 +139,8 @@ pub fn strings_to_bytes(
 
     for s in list {
         let string_bytes = s.as_bytes();
-        let len = u32::try_from(string_bytes.len()).map_err(|_| {
-            ListOfStringsEncodeError::StringTooLong(string_bytes.len())
-        })?;
+        let len = u32::try_from(string_bytes.len())
+            .map_err(|_| ListOfStringsEncodeError::StringTooLong(string_bytes.len()))?;
         bytes.extend_from_slice(&len.to_le_bytes());
         bytes.extend_from_slice(string_bytes);
     }
@@ -162,16 +149,11 @@ pub fn strings_to_bytes(
 }
 
 /// Convert a list of bytes into a list of strings.
-/// 
+///
 /// # Errors
 /// [`ListOfStringsDecodeError`]
-pub fn bytes_to_strings(
-    list: &[u8],
-) -> Result<Vec<String>, ListOfStringsDecodeError> {
-    fn read_u32(
-        buf: &[u8],
-        cursor: &mut usize,
-    ) -> Result<u32, ListOfStringsDecodeError> {
+pub fn bytes_to_strings(list: &[u8]) -> Result<Vec<String>, ListOfStringsDecodeError> {
+    fn read_u32(buf: &[u8], cursor: &mut usize) -> Result<u32, ListOfStringsDecodeError> {
         let bytes = buf
             .get(*cursor..*cursor + 4)
             .ok_or(ListOfStringsDecodeError::UnexpectedEof)?;
@@ -190,8 +172,7 @@ pub fn bytes_to_strings(
             .get(cursor..cursor + len)
             .ok_or(ListOfStringsDecodeError::UnexpectedEof)?;
         strings.push(
-            String::from_utf8(bytes.to_vec())
-                .map_err(ListOfStringsDecodeError::InvalidUtf8)?,
+            String::from_utf8(bytes.to_vec()).map_err(ListOfStringsDecodeError::InvalidUtf8)?,
         );
         cursor += len;
     }

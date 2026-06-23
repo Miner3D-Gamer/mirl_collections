@@ -8,7 +8,8 @@ authors.workspace = true
 
 [dependencies]
 mirl_extensions_core = { version = "0.0.0-alpha" }
-mirl_core = { version = "0.0.0-alpha" }
+# mirl_core = { version = "0.0.0-alpha" }
+mirl_std_exposed = { version = "0.0.0-alpha" }
 
 inventory = { version = "0.3.24" }
 
@@ -22,7 +23,7 @@ bitcode = { version = "0.6.9", optional = true, default-features = false, featur
     "derive",
 ] }
 wincode = { version = "0.5.3", optional = true, features = ["derive"] }
-zerocopy = { version = "0.8.48", optional = true, default-features = false, features = [
+zerocopy = { version = "0.8.48", optional = true, features = [
     "float-nightly",
     "derive",
 ] }
@@ -40,7 +41,13 @@ image = { version = ">=0.25.9", optional = true, default-features = false }
 
 
 [features]
-all = ["all_codecs", "bitcode", "font_support", "all_enum_extensions"]
+all = [
+    "all_codecs",
+    "bitcode",
+    "font_support",
+    "image_support",
+    "all_enum_extensions",
+]
 
 # Does nothing by itself. Needs another codec or enum flag to do something
 mirl_derive = ["dep:mirl_derive"]
@@ -52,15 +59,15 @@ all_codecs = ["serde", "bitcode", "wincode", "compactly", "zerocopy"]
 all_enum_extensions = ["strum", "enum_ext"]
 
 # Codec stuff
-serde = ["dep:serde", "mirl_derive", "mirl_core/serde"]
-bitcode = ["dep:bitcode", "mirl_derive", "mirl_core/bitcode"]
-wincode = ["dep:wincode", "mirl_derive", "mirl_core/wincode"]
-compactly = ["dep:compactly", "mirl_derive", "mirl_core/compactly"]
-zerocopy = ["dep:zerocopy", "mirl_derive", "mirl_core/zerocopy"]
+serde = ["dep:serde", "mirl_derive"]
+bitcode = ["dep:bitcode", "mirl_derive"]
+wincode = ["dep:wincode", "mirl_derive"]
+compactly = ["dep:compactly", "mirl_derive"]
+zerocopy = ["dep:zerocopy", "mirl_derive"]
 
 # Enum extensions
-strum = ["dep:strum", "mirl_derive", "mirl_core/strum"]
-enum_ext = ["dep:enum_ext", "mirl_derive", "mirl_core/enum_ext"]
+strum = ["dep:strum", "mirl_derive"]
+enum_ext = ["dep:enum_ext", "mirl_derive"]
 
 font_support = ["dep:fontdue"]
 image_support = ["dep:image"]

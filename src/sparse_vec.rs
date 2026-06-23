@@ -1,6 +1,6 @@
 use mirl_extensions_core::ListLike;
 
-#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]
+#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all(zerocopy = false))]
 // #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// # Disclaimer:
 /// **use [`get_latest_idx`](Self::get_latest_idx) after using [`push`](super::ListLikeHelper::push) or [`push_mut`](ListLike::push_mut) to get the idx at which the new item lives**
@@ -55,16 +55,14 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
     }
     unsafe fn get_unchecked(&self, index: usize) -> &T {
         unsafe {
-            self.values.get_unchecked(
-                *self.value_indexes.as_slice().get_unchecked(index),
-            )
+            self.values
+                .get_unchecked(*self.value_indexes.as_slice().get_unchecked(index))
         }
     }
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
         unsafe {
-            self.values.get_unchecked_mut(
-                *self.value_indexes.as_slice().get_unchecked(index),
-            )
+            self.values
+                .get_unchecked_mut(*self.value_indexes.as_slice().get_unchecked(index))
         }
     }
     fn push_mut(&mut self, value: T) -> &mut T {
@@ -109,12 +107,10 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
         unimplemented!("`try_insert_mut` cannot be used on a sparse vec")
     }
     fn try_replace(&mut self, index: usize, value: T) -> Option<T> {
-        self.values.try_replace(*self.value_indexes.get(index)?, value)
+        self.values
+            .try_replace(*self.value_indexes.get(index)?, value)
     }
-    fn try_reserve(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), std::collections::TryReserveError> {
+    fn try_reserve(&mut self, amount: usize) -> Result<(), std::collections::TryReserveError> {
         self.values.try_reserve(amount)?;
         self.value_indexes.try_reserve(amount)?;
         self.indexes_indexes.try_reserve(amount)

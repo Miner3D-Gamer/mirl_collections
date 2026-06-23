@@ -1,3 +1,5 @@
+use crate::file_data::plugins::PlainTextFromBinaryDataPluginTrait;
+
 use super::{
     super::{BinaryData, GenericDataType},
     BinaryDataPlugin, BinaryDataPluginTrait,
@@ -38,7 +40,7 @@ pub trait DynImageFromBinaryDataPluginTrait {
 /// The trait, implemented for [`BinaryData`]
 pub trait DynImageToBinaryDataPluginTrait {
     /// Create a [`BinaryData`] from a string
-    fn from_image(img: &image::DynamicImage) -> Self;
+    fn from_image(img: image::DynamicImage) -> Self;
 }
 impl<T> DynImageFromBinaryDataPluginTrait for BinaryData<T> {
     fn to_image(
@@ -51,21 +53,22 @@ impl<T> DynImageFromBinaryDataPluginTrait for BinaryData<T> {
     }
 }
 impl DynImageToBinaryDataPluginTrait for BinaryData<GenericDataType> {
-    fn from_image(img: &image::DynamicImage) -> Self {
+    fn from_image(img: image::DynamicImage) -> Self {
         Self {
-            raw_data: img,
-            data_type: GenericDataType::Text,
+            raw_data: img.into_bytes(),
+            data_type: GenericDataType::Image,
         }
     }
 }
 impl DynImageToBinaryDataPluginTrait for BinaryData<String> {
-    fn from_string(string: String) -> Self {
+    fn from_image(img: image::DynamicImage) -> Self {
         Self {
-            raw_data: string.into_bytes(),
-            data_type: "string@utf8".to_string(),
+            raw_data: img.into_bytes(),
+            data_type: "raw_data@Image".to_string(), // TODO: Get image format
         }
     }
 }
+
 
 inventory::submit! {
     BinaryDataPlugin {

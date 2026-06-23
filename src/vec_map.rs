@@ -1,4 +1,4 @@
-use mirl_core::misc::vec_try_remove;
+use mirl_std_exposed::vec::vec_try_remove;
 use mirl_extensions_core::IndexedMap;
 
 #[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]

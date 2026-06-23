@@ -9,7 +9,10 @@ inventory::collect!(BinaryDataPlugin<GenericDataType>);
 
 inventory::collect!(BinaryDataPlugin<String>);
 
-#[cfg_attr(feature = "mirl_derive", mirl_derive::derive_all)]
+#[cfg_attr(
+    feature = "mirl_derive",
+    mirl_derive::derive_all(read_only = true, zerocopy = false)
+)]
 /// This struct hold the raw data in memory, often received from a file, to be converted/used somewhere else
 ///
 /// ---
@@ -18,7 +21,6 @@ inventory::collect!(BinaryDataPlugin<String>);
 ///
 /// This generic is usually set to [`GenericDataType`] for generic formats, or [`String`] for dynamic formats, or a custom empty enum for hyper specialized formats
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "c_compatible", repr(C))]
 pub struct BinaryData<DT = GenericDataType> {
     /// Raw data
     pub raw_data: Vec<u8>,
@@ -160,13 +162,9 @@ impl BinaryData {
     ///
     /// # Errors
     /// When not a font it will error
-    pub fn to_font(
-        &self,
-    ) -> Result<fontdue::Font, Box<dyn core::error::Error>> {
-        let font = fontdue::Font::from_bytes(
-            self.raw_data.clone(),
-            fontdue::FontSettings::default(),
-        )?;
+    pub fn to_font(&self) -> Result<fontdue::Font, Box<dyn core::error::Error>> {
+        let font =
+            fontdue::Font::from_bytes(self.raw_data.clone(), fontdue::FontSettings::default())?;
         Ok(font)
     }
     #[must_use]
