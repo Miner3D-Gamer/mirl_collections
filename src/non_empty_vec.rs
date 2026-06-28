@@ -7,15 +7,17 @@ use mirl_extensions_core::ListLike;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NonEmptyVec<T> {
-    first: T,
-    rest: Vec<T>,
+    /// The must-have value
+    pub _first: T,
+    /// The rest
+    pub _rest: Vec<T>,
 }
 impl<T> NonEmptyVec<T> {
     /// Create a new [`NonEmptyVec`] with a single item inside
     pub const fn new(item: T) -> Self {
         Self {
-            first: item,
-            rest: Vec::new(),
+            _first: item,
+            _rest: Vec::new(),
         }
     }
 }
@@ -27,9 +29,9 @@ impl<'a, T> IntoIterator for &'a NonEmptyVec<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         NonEmptyVecIter {
-            inner: self.rest.iter(),
+            inner: self._rest.iter(),
 
-            inner_first: Some(&self.first),
+            inner_first: Some(&self._first),
         }
     }
 }
@@ -41,9 +43,9 @@ impl<'a, T> IntoIterator for &'a mut NonEmptyVec<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         NonEmptyVecIterMut {
-            inner: self.rest.iter_mut(),
+            inner: self._rest.iter_mut(),
 
-            inner_first: Some(&mut self.first),
+            inner_first: Some(&mut self._first),
         }
     }
 }
@@ -54,29 +56,27 @@ impl<T> IntoIterator for NonEmptyVec<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoNonEmptyVecIter {
-            inner: self.rest.into_iter(),
+            inner: self._rest.into_iter(),
 
-            inner_first: Some(self.first),
+            inner_first: Some(self._first),
         }
     }
 }
 
-impl<T: [const] std::default::Default> const std::default::Default
-    for NonEmptyVec<T>
-{
+const impl<T: [const] std::default::Default> std::default::Default for NonEmptyVec<T> {
     fn default() -> Self {
         Self {
-            first: T::default(),
-            rest: Vec::new(),
+            _first: T::default(),
+            _rest: Vec::new(),
         }
     }
 }
 impl<T> std::ops::IndexMut<usize> for NonEmptyVec<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         if index == 0 {
-            &mut self.first
+            &mut self._first
         } else {
-            self.rest.index_mut(index - 1)
+            self._rest.index_mut(index - 1)
         }
     }
 }
@@ -84,140 +84,128 @@ impl<T> std::ops::Index<usize> for NonEmptyVec<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
         if index == 0 {
-            &self.first
+            &self._first
         } else {
-            self.rest.index(index - 1)
+            self._rest.index(index - 1)
         }
     }
 }
 
 impl<T> ListLike<T, usize> for NonEmptyVec<T> {
-    type Iterator<'a>
-        = NonEmptyVecIter<'a, T>
-    where
-        T: 'a;
+    // type Iterator<'a>
+    //     = NonEmptyVecIter<'a, T>
+    // where
+    //     T: 'a;
 
-    type IteratorMut<'a>
-        = NonEmptyVecIterMut<'a, T>
-    where
-        T: 'a;
-    fn iter(&self) -> Self::Iterator<'_> {
-        <&Self as IntoIterator>::into_iter(self)
-    }
-    fn iter_mut(&mut self) -> Self::IteratorMut<'_> {
-        <&mut Self as IntoIterator>::into_iter(self)
-    }
+    // type IteratorMut<'a>
+    //     = NonEmptyVecIterMut<'a, T>
+    // where
+    //     T: 'a;
+    // fn iter(&self) -> Self::Iterator<'_> {
+    //     <&Self as IntoIterator>::into_iter(self)
+    // }
+    // fn iter_mut(&mut self) -> Self::IteratorMut<'_> {
+    //     <&mut Self as IntoIterator>::into_iter(self)
+    // }
     unsafe fn get_unchecked(&self, index: usize) -> &T {
         if index == 0 {
-            &self.first
+            &self._first
         } else {
-            unsafe { self.rest.get_unchecked(index - 1) }
+            unsafe { self._rest.get_unchecked(index - 1) }
         }
     }
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
         if index == 0 {
-            &mut self.first
+            &mut self._first
         } else {
-            unsafe { self.rest.get_unchecked_mut(index - 1) }
+            unsafe { self._rest.get_unchecked_mut(index - 1) }
         }
     }
 
     fn push_mut(&mut self, value: T) -> &mut T {
-        self.rest.push_mut(value)
+        self._rest.push_mut(value)
     }
     /// Try to remove a value. If you try to remove the last value None is returned instead
     fn try_remove(&mut self, index: usize) -> Option<T> {
         if index == 0 {
-            if self.rest.is_empty() {
+            if self._rest.is_empty() {
                 None
             } else {
-                let new_first =
-                    unsafe { self.rest.try_remove(0).unwrap_unchecked() };
-                Some(std::mem::replace(&mut self.first, new_first))
+                let new_first = unsafe { self._rest.try_remove(0).unwrap_unchecked() };
+                Some(std::mem::replace(&mut self._first, new_first))
             }
         } else {
-            self.rest.try_remove(index - 1)
+            self._rest.try_remove(index - 1)
         }
     }
 
     fn swap_values(&mut self, a: usize, b: usize) -> bool {
-        let (a, b) = if a > b {
-            (b, a)
-        } else {
-            (a, b)
-        };
+        let (a, b) = if a > b { (b, a) } else { (a, b) };
         if a == b {
             return true;
         }
-        if b > self.rest.len() {
+        if b > self._rest.len() {
             return false;
         }
         if a == 0 {
             unsafe {
-                std::mem::swap(
-                    &mut self.first,
-                    self.rest.get_unchecked_mut(b - 1),
-                );
+                std::mem::swap(&mut self._first, self._rest.get_unchecked_mut(b - 1));
             }
         }
-        if a > self.rest.len() {
+        if a > self._rest.len() {
             return false;
         }
         unsafe {
-            self.rest.swap_unchecked(a, b);
+            self._rest.swap_unchecked(a, b);
         }
         true
     }
 
     fn len(&self) -> usize {
-        self.rest.len() + 1
+        self._rest.len() + 1
     }
 
     fn pop(&mut self) -> Option<T> {
-        self.rest.pop()
+        self._rest.pop()
     }
     // TODO: This could be outputting the wrong &mut T if index is zero, idk
     fn try_insert_mut(&mut self, index: usize, value: T) -> Option<&mut T> {
         if index == 0 {
             // Safety: Index 0 is always valid
-            let first =
-                unsafe { self.try_replace(0, value).unwrap_unchecked() };
-            self.rest.try_insert_mut(0, first)
+            let first = unsafe { self.try_replace(0, value).unwrap_unchecked() };
+            self._rest.try_insert_mut(0, first)
         } else {
-            self.rest.try_insert_mut(index - 1, value)
+            self._rest.try_insert_mut(index - 1, value)
         }
     }
 
     fn try_replace(&mut self, index: usize, value: T) -> Option<T> {
         if index == 0 {
             let mut output = value;
-            std::mem::swap(&mut output, &mut self.first);
+            std::mem::swap(&mut output, &mut self._first);
             Some(output)
         } else {
-            self.rest.try_replace(index, value)
+            self._rest.try_replace(index, value)
         }
     }
 
-    fn try_reserve(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), std::collections::TryReserveError> {
-        self.rest.try_reserve(amount.saturating_sub(1))
+    fn try_reserve(&mut self, amount: usize) -> Result<(), std::collections::TryReserveError> {
+        self._rest.try_reserve(amount.saturating_sub(1))
     }
 
     fn find_position(&self, item: &T) -> Option<usize>
     where
         T: std::cmp::PartialEq,
     {
-        if self.first.eq(item) {
+        if self._first.eq(item) {
             Some(0)
         } else {
-            self.rest.find_position(item).map(|x| x - 1)
+            self._rest.find_position(item).map(|x| x - 1)
         }
     }
     /// Clears every value but the first.
     fn clear(&mut self) {
-        self.rest.clear();
+        self._rest.clear();
     }
 }
 

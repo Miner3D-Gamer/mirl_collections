@@ -15,66 +15,60 @@ use mirl_extensions_core::ListLike;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SparseVec<T> {
     /// The actually stored values
-    ///
-    /// IT IS NOT RECOMMENDED TO EDIT THIS MANUALLY
-    pub values: Vec<T>,
+    pub _values: Vec<T>,
     /// A list pointing where the values are stored
-    ///
-    /// IT IS NOT RECOMMENDED TO EDIT THIS MANUALLY
-    pub value_indexes: Vec<usize>,
+    pub _value_indexes: Vec<usize>,
     /// The inverse of the pointer list
-    ///
-    /// IT IS NOT RECOMMENDED TO EDIT THIS MANUALLY
-    pub indexes_indexes: Vec<usize>,
+    pub _indexes_indexes: Vec<usize>,
 }
 impl<T> Default for SparseVec<T> {
     fn default() -> Self {
         Self {
-            values: Vec::new(),
-            value_indexes: Vec::new(),
-            indexes_indexes: Vec::new(),
+            _values: Vec::new(),
+            _value_indexes: Vec::new(),
+            _indexes_indexes: Vec::new(),
         }
     }
 }
 impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
-    type Iterator<'a>
-        = UnorderedSparseVecIter<'a, T>
-    where
-        T: 'a;
+    // type Iterator<'a>
+    //     = UnorderedSparseVecIter<'a, T>
+    // where
+    //     T: 'a;
 
-    type IteratorMut<'a>
-        = UnorderedSparseVecIterMut<'a, T>
-    where
-        T: 'a;
+    // type IteratorMut<'a>
+    //     = UnorderedSparseVecIterMut<'a, T>
+    // where
+    //     T: 'a;
 
-    fn iter(&self) -> Self::Iterator<'_> {
-        <&Self as IntoIterator>::into_iter(self)
-    }
-    fn iter_mut(&mut self) -> Self::IteratorMut<'_> {
-        <&mut Self as IntoIterator>::into_iter(self)
-    }
+    // fn iter(&self) -> Self::Iterator<'_> {
+    //     <&Self as IntoIterator>::into_iter(self)
+    // }
+    // fn iter_mut(&mut self) -> Self::IteratorMut<'_> {
+    //     <&mut Self as IntoIterator>::into_iter(self)
+    // }
     unsafe fn get_unchecked(&self, index: usize) -> &T {
         unsafe {
-            self.values
-                .get_unchecked(*self.value_indexes.as_slice().get_unchecked(index))
+            self._values
+                .get_unchecked(*self._value_indexes.as_slice().get_unchecked(index))
         }
     }
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
         unsafe {
-            self.values
-                .get_unchecked_mut(*self.value_indexes.as_slice().get_unchecked(index))
+            self._values
+                .get_unchecked_mut(*self._value_indexes.as_slice().get_unchecked(index))
         }
     }
     fn push_mut(&mut self, value: T) -> &mut T {
-        if self.values.len() + 1 > self.value_indexes.len() {
-            self.value_indexes.push(self.values.len());
-            self.indexes_indexes.push(self.values.len());
+        if self._values.len() + 1 > self._value_indexes.len() {
+            self._value_indexes.push(self._values.len());
+            self._indexes_indexes.push(self._values.len());
         }
-        self.values.push_mut(value)
+        self._values.push_mut(value)
     }
     fn swap_values(&mut self, a: usize, b: usize) -> bool {
-        let first = self.value_indexes[a];
-        let second = self.value_indexes[b];
+        let first = self._value_indexes[a];
+        let second = self._value_indexes[b];
         if first > self.len() || second > self.len() {
             return false;
         }
@@ -82,22 +76,22 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
         true
     }
     fn try_remove(&mut self, index: usize) -> Option<T> {
-        let a = self.value_indexes[index];
-        let b = self.values.len() - 1;
-        if a >= self.values.len() || b >= self.values.len() {
+        let a = self._value_indexes[index];
+        let b = self._values.len() - 1;
+        if a >= self._values.len() || b >= self._values.len() {
             return None;
         }
         self.swap_internal(a, b);
 
-        // [`self.values`](SparseVec::values) cannot be empty,
+        // [`self.values`](Self::values) cannot be empty,
         // if it was [`self.swap_internal`](SparseVec::swap_internal) would have already panicked
-        Some(unsafe { self.values.pop().unwrap_unchecked() })
+        Some(unsafe { self._values.pop().unwrap_unchecked() })
     }
     fn len(&self) -> usize {
-        self.values.len()
+        self._values.len()
     }
     fn pop(&mut self) -> Option<T> {
-        self.values.pop()
+        self._values.pop()
     }
     /// This function shall not be called.
     ///
@@ -107,52 +101,52 @@ impl<T: std::cmp::PartialEq> ListLike<T, usize> for SparseVec<T> {
         unimplemented!("`try_insert_mut` cannot be used on a sparse vec")
     }
     fn try_replace(&mut self, index: usize, value: T) -> Option<T> {
-        self.values
-            .try_replace(*self.value_indexes.get(index)?, value)
+        self._values
+            .try_replace(*self._value_indexes.get(index)?, value)
     }
     fn try_reserve(&mut self, amount: usize) -> Result<(), std::collections::TryReserveError> {
-        self.values.try_reserve(amount)?;
-        self.value_indexes.try_reserve(amount)?;
-        self.indexes_indexes.try_reserve(amount)
+        self._values.try_reserve(amount)?;
+        self._value_indexes.try_reserve(amount)?;
+        self._indexes_indexes.try_reserve(amount)
     }
     fn find_position(&self, item: &T) -> Option<usize> {
-        Some(self.indexes_indexes[self.values.find_position(item)?])
+        Some(self._indexes_indexes[self._values.find_position(item)?])
     }
     fn clear(&mut self) {
-        self.values.clear();
-        self.value_indexes.clear();
-        self.indexes_indexes.clear();
+        self._values.clear();
+        self._value_indexes.clear();
+        self._indexes_indexes.clear();
     }
 }
 
 impl<T> SparseVec<T> {
     /// This swaps two values directly without first getting the value positions first
     pub fn swap_internal(&mut self, a: usize, b: usize) {
-        debug_assert!(a < self.values.len(), "Index a out of bounds");
-        debug_assert!(b < self.values.len(), "Index b out of bounds");
+        debug_assert!(a < self._values.len(), "Index a out of bounds");
+        debug_assert!(b < self._values.len(), "Index b out of bounds");
 
-        self.values.swap(a, b);
-        self.indexes_indexes.swap(a, b);
-        self.value_indexes[self.indexes_indexes[b]] = b;
-        self.value_indexes[self.indexes_indexes[a]] = a;
+        self._values.swap(a, b);
+        self._indexes_indexes.swap(a, b);
+        self._value_indexes[self._indexes_indexes[b]] = b;
+        self._value_indexes[self._indexes_indexes[a]] = a;
     }
     #[must_use]
     /// After using [`push`](super::ListLikeHelper::push) or [`push_mut`](ListLike::push_mut), use this function to get the index of the pushed item
     pub fn get_latest_idx(&self) -> usize {
-        self.indexes_indexes[self.values.len() - 1]
+        self._indexes_indexes[self._values.len() - 1]
     }
 }
 
 impl<T> std::ops::Index<usize> for SparseVec<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.values[self.value_indexes[index]]
+        &self._values[self._value_indexes[index]]
     }
 }
 
 impl<T> std::ops::IndexMut<usize> for SparseVec<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.values[self.value_indexes[index]]
+        &mut self._values[self._value_indexes[index]]
     }
 }
 #[derive(Debug, Clone, Default)]
@@ -203,7 +197,7 @@ impl<T> SparseVec<T> {
     /// Iter over the internal values, the iter idx is not the same as the idx used to derive a value
     pub fn iter(&self) -> UnorderedSparseVecIter<'_, T> {
         UnorderedSparseVecIter {
-            inner: self.values.iter(),
+            inner: self._values.iter(),
         }
     }
 
@@ -211,7 +205,7 @@ impl<T> SparseVec<T> {
     /// Iter over the internal values mutably, the iter idx is not the same as the idx used to derive a value
     pub fn iter_mut(&mut self) -> UnorderedSparseVecIterMut<'_, T> {
         UnorderedSparseVecIterMut {
-            inner: self.values.iter_mut(),
+            inner: self._values.iter_mut(),
         }
     }
 }
@@ -239,6 +233,6 @@ impl<T> IntoIterator for SparseVec<T> {
     type IntoIter = std::vec::IntoIter<T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.values.into_iter()
+        self._values.into_iter()
     }
 }
